@@ -389,10 +389,12 @@ class GoogleDriveStorage(Storage):
         """
         Deletes the specified file from the storage system.
         """
-        file_data = self._check_file_exists(name)
-        if file_data is not None:
-            self._drive_service.files().delete(
-                fileId=file_data['id']).execute()
+        # file_data = self._check_file_exists(name)
+        # if file_data is not None:
+        #     self._drive_service.files().delete(
+        #         fileId=file_data['id']).execute()
+        if id:
+            self._drive_service.files().delete(fileId=id).execute()
 
     def exists(self, name):
         """
