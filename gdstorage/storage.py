@@ -291,7 +291,7 @@ class GoogleDriveStorage(Storage):
             q=q, fields='nextPageToken, files(*)').execute()
         items = results.get('files', [])
         for item in items:
-            if split_filename[0] in item['name']:
+            if split_filename[0] == item['name']:
                 return item
         #return None
         return self._check_id_exists(filename)
