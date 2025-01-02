@@ -20,13 +20,13 @@ class GoogleDrivePermissionType(enum.Enum):
     `Drive docs <https://developers.google.com/drive/v3/reference/permissions>`_
     """  # noqa: E501
 
-    USER = 'user'  # Permission for single user
+    USER = "user"  # Permission for single user
 
-    GROUP = 'group'  # Permission for group defined in Google Drive
+    GROUP = "group"  # Permission for group defined in Google Drive
 
-    DOMAIN = 'domain'  # Permission for domain defined in Google Drive
+    DOMAIN = "domain"  # Permission for domain defined in Google Drive
 
-    ANYONE = 'anyone'  # Permission for anyone
+    ANYONE = "anyone"  # Permission for anyone
 
 
 class GoogleDrivePermissionRole(enum.Enum):
@@ -35,13 +35,13 @@ class GoogleDrivePermissionRole(enum.Enum):
     `Drive docs <https://developers.google.com/drive/v3/reference/permissions>`_
     """  # noqa: E501
 
-    OWNER = 'owner'  # File Owner
+    OWNER = "owner"  # File Owner
 
-    READER = 'reader'  # User can read a file
+    READER = "reader"  # User can read a file
 
-    WRITER = 'writer'  # User can write a file
+    WRITER = "writer"  # User can write a file
 
-    COMMENTER = 'commenter'  # User can comment a file
+    COMMENTER = "commenter"  # User can comment a file
 
 
 @deconstructible
@@ -95,13 +95,10 @@ class GoogleDriveFilePermission(object):
         :rtype: dict
         """  # noqa: E501
 
-        result = {
-            'role': self.role.value,
-            'type': self.type.value
-        }
+        result = {"role": self.role.value, "type": self.type.value}
 
         if self.value is not None:
-            result['emailAddress'] = self.value
+            result["emailAddress"] = self.value
 
         return result
 
@@ -110,15 +107,11 @@ class GoogleDriveFilePermission(object):
         Instantiate this class
         """
         if not isinstance(g_role, GoogleDrivePermissionRole):
-            raise ValueError(
-                'Role should be a GoogleDrivePermissionRole instance'
-            )
+            raise ValueError("Role should be a GoogleDrivePermissionRole instance")
         if not isinstance(g_type, GoogleDrivePermissionType):
-            raise ValueError(
-                'Permission should be a GoogleDrivePermissionType instance'
-            )
+            raise ValueError("Permission should be a GoogleDrivePermissionType instance")
         if g_value is not None and not isinstance(g_value, str):
-            raise ValueError('Value should be a String instance')
+            raise ValueError("Value should be a String instance")
 
         self._role = g_role
         self._type = g_type
@@ -126,8 +119,7 @@ class GoogleDriveFilePermission(object):
 
 
 _ANYONE_CAN_READ_PERMISSION_ = GoogleDriveFilePermission(
-    GoogleDrivePermissionRole.READER,
-    GoogleDrivePermissionType.ANYONE
+    GoogleDrivePermissionRole.READER, GoogleDrivePermissionType.ANYONE
 )
 
 
@@ -141,10 +133,10 @@ class GoogleDriveStorage(Storage):
     owned by the application declared on Google API console).
     """
 
-    _UNKNOWN_MIMETYPE_ = 'application/octet-stream'
-    _GOOGLE_DRIVE_FOLDER_MIMETYPE_ = 'application/vnd.google-apps.folder'
-    KEY_FILE_PATH = 'GOOGLE_DRIVE_STORAGE_JSON_KEY_FILE'
-    KEY_FILE_CONTENT = 'GOOGLE_DRIVE_STORAGE_JSON_KEY_FILE_CONTENTS'
+    _UNKNOWN_MIMETYPE_ = "application/octet-stream"
+    _GOOGLE_DRIVE_FOLDER_MIMETYPE_ = "application/vnd.google-apps.folder"
+    KEY_FILE_PATH = "GOOGLE_DRIVE_STORAGE_JSON_KEY_FILE"
+    KEY_FILE_CONTENT = "GOOGLE_DRIVE_STORAGE_JSON_KEY_FILE_CONTENTS"
 
     def __init__(self, json_keyfile_path=None, permissions=None):
         """
@@ -159,34 +151,40 @@ class GoogleDriveStorage(Storage):
         if self._json_keyfile_path:
             credentials = Credentials.from_service_account_file(
                 self._json_keyfile_path,
-                scopes=['https://www.googleapis.com/auth/drive'],
+                scopes=["https://www.googleapis.com/auth/drive"],
             )
         else:
             credentials = Credentials.from_service_account_info(
                 json.loads(os.environ[self.KEY_FILE_CONTENT]),
-                scopes=['https://www.googleapis.com/auth/drive'],
+                scopes=["https://www.googleapis.com/auth/drive"],
             )
 
         self._permissions = None
         if permissions is None:
             self._permissions = (_ANYONE_CAN_READ_PERMISSION_,)
         else:
-            if not isinstance(permissions, (tuple, list,)):
+            if not isinstance(
+                permissions,
+                (
+                    tuple,
+                    list,
+                ),
+            ):
                 raise ValueError(
-                    'Permissions should be a list or a tuple of '
-                    'GoogleDriveFilePermission instances'
+                    "Permissions should be a list or a tuple of "
+                    "GoogleDriveFilePermission instances"
                 )
             else:
                 for p in permissions:
                     if not isinstance(p, GoogleDriveFilePermission):
                         raise ValueError(
-                            'Permissions should be a list or a tuple of '
-                            'GoogleDriveFilePermission instances'
+                            "Permissions should be a list or a tuple of "
+                            "GoogleDriveFilePermission instances"
                         )
                 # Ok, permissions are good
                 self._permissions = permissions
 
-        self._drive_service = build('drive', 'v3', credentials=credentials)
+        self._drive_service = build("drive", "v3", credentials=credentials)
 
     def _split_path(self, p):
         """
@@ -196,7 +194,7 @@ class GoogleDriveStorage(Storage):
         :type p: string
         :returns: list - List of strings that composes the path
         """
-        p = p[1:] if p[0] == '/' else p
+        p = p[1:] if p[0] == "/" else p
         a, b = os.path.split(p)
         return (self._split_path(a) if len(a) and len(b) else []) + [b]
 
@@ -214,6 +212,12 @@ class GoogleDriveStorage(Storage):
         """
         folder_data = self._check_file_exists(path, parent_id)
         if folder_data is not None:
+
+            # for p in self._permissions:
+            #     self._drive_service.permissions().create(
+            #         fileId=folder_data["id"], body={**p.raw}
+            #     ).execute()
+
             return folder_data
 
         # Folder does not exists, have to create
@@ -221,25 +225,19 @@ class GoogleDriveStorage(Storage):
 
         if split_path[:-1]:
             parent_path = os.path.join(*split_path[:-1])
-            current_folder_data = self._get_or_create_folder(
-                parent_path, parent_id=parent_id
-            )
+            current_folder_data = self._get_or_create_folder(parent_path, parent_id=parent_id)
         else:
             current_folder_data = None
 
-        meta_data = {
-            'name': split_path[-1],
-            'mimeType': self._GOOGLE_DRIVE_FOLDER_MIMETYPE_
-        }
+        meta_data = {"name": split_path[-1], "mimeType": self._GOOGLE_DRIVE_FOLDER_MIMETYPE_}
         if current_folder_data is not None:
-            meta_data['parents'] = [current_folder_data['id']]
+            meta_data["parents"] = [current_folder_data["id"]]
         else:
             # This is the first iteration loop so we have to set
             # the parent_id obtained by the user, if available
             if parent_id is not None:
-                meta_data['parents'] = [parent_id]
-        current_folder_data = self._drive_service.files().create(
-            body=meta_data).execute()
+                meta_data["parents"] = [parent_id]
+        current_folder_data = self._drive_service.files().create(body=meta_data).execute()
 
         # Setting up permissions
         for p in self._permissions:
@@ -262,7 +260,7 @@ class GoogleDriveStorage(Storage):
             # This is the lack of directory at the beginning of a 'file.txt'
             # Since the target file lacks directories, the assumption
             # is that it belongs at '/'
-            return self._drive_service.files().get(fileId='root').execute()
+            return self._drive_service.files().get(fileId="root").execute()
         split_filename = self._split_path(filename)
         if len(split_filename) > 1:
             # This is an absolute path with folder inside
@@ -271,38 +269,36 @@ class GoogleDriveStorage(Storage):
             # Otherwise the path does not exists hence
             # the file does not exists
             q = "mimeType = '{0}' and name = '{1}'".format(
-                self._GOOGLE_DRIVE_FOLDER_MIMETYPE_, split_filename[0],
+                self._GOOGLE_DRIVE_FOLDER_MIMETYPE_,
+                split_filename[0],
             )
             if parent_id is not None:
                 q = "{0} and '{1}' in parents".format(q, parent_id)
-            results = self._drive_service.files().list(
-                q=q, fields='nextPageToken, files(*)').execute()
-            items = results.get('files', [])
+            results = (
+                self._drive_service.files().list(q=q, fields="nextPageToken, files(*)").execute()
+            )
+            items = results.get("files", [])
             for item in items:
-                if item['name'] == split_filename[0]:
+                if item["name"] == split_filename[0]:
                     # Assuming every folder has a single parent
-                    return self._check_file_exists(
-                        os.path.sep.join(split_filename[1:]), item['id'])
+                    return self._check_file_exists(os.path.sep.join(split_filename[1:]), item["id"])
             return None
         # This is a file, checking if exists
         q = "name = '{0}'".format(split_filename[0])
         if parent_id is not None:
             q = "{0} and '{1}' in parents".format(q, parent_id)
-        results = self._drive_service.files().list(
-            q=q, fields='nextPageToken, files(*)').execute()
-        items = results.get('files', [])
+        results = self._drive_service.files().list(q=q, fields="nextPageToken, files(*)").execute()
+        items = results.get("files", [])
         if len(items) > 0:
             return items[0]
-        q = '' if parent_id is None else "'{0}' in parents".format(parent_id)
-        results = self._drive_service.files().list(
-            q=q, fields='nextPageToken, files(*)').execute()
-        items = results.get('files', [])
+        q = "" if parent_id is None else "'{0}' in parents".format(parent_id)
+        results = self._drive_service.files().list(q=q, fields="nextPageToken, files(*)").execute()
+        items = results.get("files", [])
         for item in items:
-            if split_filename[0] == item['name']:
+            if split_filename[0] == item["name"]:
                 return item
-        #return None
-        return self._check_id_exists(filename)
-
+        return None
+        # return self._check_id_exists(filename)
 
     def _check_id_exists(self, id):
         """
@@ -313,10 +309,18 @@ class GoogleDriveStorage(Storage):
             # This is the lack of directory at the beginning of a 'file.txt'
             # Since the target file lacks directories, the assumption
             # is that it belongs at '/'
-            return self._drive_service.files().get(fileId='root', fields='files(id,name,originalFilename,webContentLink)').execute()
+            return (
+                self._drive_service.files()
+                .get(fileId="root", fields="files(id,name,originalFilename,webContentLink)")
+                .execute()
+            )
         # This is a file, checking if exists
         try:
-            results = self._drive_service.files().get(fileId=id, fields='id,name,originalFilename,webContentLink').execute()
+            results = (
+                self._drive_service.files()
+                .get(fileId=id, fields="id,name,originalFilename,webContentLink")
+                .execute()
+            )
             return results
             # items = results.get('files', [])
             # if len(items) > 0:
@@ -327,13 +331,12 @@ class GoogleDriveStorage(Storage):
     # Methods that had to be implemented
     # to create a valid storage for Django
 
-    def _open(self, name, mode='rb'):
+    def _open(self, name, mode="rb"):
         """For more details see
         https://developers.google.com/drive/api/v3/manage-downloads?hl=id#download_a_file_stored_on_google_drive
         """  # noqa: E501
         file_data = self._check_file_exists(name)
-        request = self._drive_service.files().get_media(
-            fileId=file_data['id'])
+        request = self._drive_service.files().get_media(fileId=file_data["id"])
         fh = BytesIO()
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -342,7 +345,7 @@ class GoogleDriveStorage(Storage):
         fh.seek(0)
         return File(fh, name)
 
-    def save(self, name, content, max_length=None):
+    def save(self, name, content, max_length=None, update=False):
         """
         Save new content to the file specified by name. The content should be
         a proper File object or any Python file-like object, ready to be read
@@ -356,42 +359,68 @@ class GoogleDriveStorage(Storage):
             content = File(content, name)
 
         name = self.get_available_name(name, max_length=max_length)
-        name = self._save(name, content)
+        name = self._save(name, content, update=update)
         # Ensure that the name returned from the storage system is still valid.
-        #validate_file_name(name, allow_relative_path=True)
+        # validate_file_name(name, allow_relative_path=True)
         return name
 
-    def _save(self, name, content):
+    def _save(self, name, content, update=False):
         name = os.path.join(settings.GOOGLE_DRIVE_STORAGE_MEDIA_ROOT, name)
         folder_path = os.path.sep.join(self._split_path(name)[:-1])
         folder_data = self._get_or_create_folder(folder_path)
-        parent_id = None if folder_data is None else folder_data['id']
+        parent_id = None if folder_data is None else folder_data["id"]
         # Now we had created (or obtained) folder on GDrive
         # Upload the file
         mime_type, _ = mimetypes.guess_type(name)
         if mime_type is None:
             mime_type = self._UNKNOWN_MIMETYPE_
         media_body = MediaIoBaseUpload(
-            content.file, mime_type, resumable=True, chunksize=1024 * 512)
-        body = {
-            'name': self._split_path(name)[-1],
-            'mimeType': mime_type
-        }
-        # Set the parent folder.
-        if parent_id:
-            body['parents'] = [parent_id]
-        file_data = self._drive_service.files().create(
-            body=body,
-            media_body=media_body,
-            fields='id,name,originalFilename,exportLinks,webContentLink').execute()
+            content.file, mime_type, resumable=True, chunksize=1024 * 512
+        )
+        body = {"name": self._split_path(name)[-1], "mimeType": mime_type}
+
+        exists = self._check_file_exists(body["name"], parent_id)
+
+        if update and exists:
+            file_data = (
+                self._drive_service.files()
+                .update(
+                    body=body,
+                    media_body=media_body,
+                    fileId=exists["id"],
+                    fields="id,name,originalFilename,exportLinks,webContentLink",
+                )
+                .execute()
+            )
+        else:
+
+            # Set the parent folder.
+            if parent_id:
+                body["parents"] = [parent_id]
+
+            file_data = (
+                self._drive_service.files()
+                .create(
+                    body=body,
+                    media_body=media_body,
+                    fields="id,name,originalFilename,exportLinks,webContentLink",
+                )
+                .execute()
+            )
 
         # Setting up permissions
         for p in self._permissions:
             self._drive_service.permissions().create(
-                fileId=file_data['id'], body={**p.raw}).execute()
+                fileId=file_data["id"], body={**p.raw}
+            ).execute()
 
-        return {'id': file_data['id'], 'name': file_data.get('name'), 'original_name': file_data.get('originalFilename'), 'url': file_data['webContentLink']}
- 
+        return {
+            "id": file_data["id"],
+            "name": file_data.get("name"),
+            "original_name": file_data.get("originalFilename"),
+            "url": file_data["webContentLink"],
+        }
+
     def delete(self, name):
         """
         Deletes the specified file from the storage system.
@@ -409,7 +438,7 @@ class GoogleDriveStorage(Storage):
         in the storage system, or False if the name is available for
         a new file.
         """
-        #return self._check_file_exists(name) is not None
+        # return self._check_file_exists(name) is not None
         return self._check_id_exists(name) is not None
 
     def listdir(self, path):
@@ -418,27 +447,29 @@ class GoogleDriveStorage(Storage):
         the first item being directories, the second item being files.
         """
         directories, files = [], []
-        if path == '/':
-            folder_id = {'id': 'root'}
+        if path == "/":
+            folder_id = {"id": "root"}
         else:
             folder_id = self._check_file_exists(path)
         if folder_id:
             file_params = {
-                'q': "'{0}' in parents and mimeType != '{1}'".format(
-                    folder_id['id'], self._GOOGLE_DRIVE_FOLDER_MIMETYPE_),
+                "q": "'{0}' in parents and mimeType != '{1}'".format(
+                    folder_id["id"], self._GOOGLE_DRIVE_FOLDER_MIMETYPE_
+                ),
             }
             dir_params = {
-                'q': "'{0}' in parents and mimeType = '{1}'".format(
-                    folder_id['id'], self._GOOGLE_DRIVE_FOLDER_MIMETYPE_),
+                "q": "'{0}' in parents and mimeType = '{1}'".format(
+                    folder_id["id"], self._GOOGLE_DRIVE_FOLDER_MIMETYPE_
+                ),
             }
             files_results = self._drive_service.files().list(**file_params).execute()  # noqa: E501
             dir_results = self._drive_service.files().list(**dir_params).execute()  # noqa: E501
-            files_list = files_results.get('files', [])
-            dir_list = dir_results.get('files', [])
+            files_list = files_results.get("files", [])
+            dir_list = dir_results.get("files", [])
             for element in files_list:
-                files.append(os.path.join(path, element['name']))
+                files.append(os.path.join(path, element["name"]))
             for element in dir_list:
-                directories.append(os.path.join(path, element['name']))
+                directories.append(os.path.join(path, element["name"]))
         return directories, files
 
     def size(self, name):
@@ -448,29 +479,34 @@ class GoogleDriveStorage(Storage):
         file_data = self._check_file_exists(name)
         if file_data is None:
             return 0
-        return file_data['size']
+        return file_data["size"]
 
     def url(self, id):
         """
         Returns an absolute URL where the file's contents can be accessed
         directly by a Web browser.
         """
-        #file_data = self._check_file_exists(name)
+        # file_data = self._check_file_exists(name)
         file_data = self._check_id_exists(id)
         if file_data is None:
             return None
-        return file_data['webContentLink']
+        return file_data["webContentLink"]
 
     def data(self, id):
         """
         Returns an absolute URL where the file's contents can be accessed
         directly by a Web browser.
         """
-        #file_data = self._check_file_exists(name)
+        # file_data = self._check_file_exists(name)
         file_data = self._check_id_exists(id)
         if file_data is None:
             return None
-        return {'url': file_data.get('webContentLink',''), 'id': id, 'name': file_data['name'], 'original_name': file_data['originalFilename']}
+        return {
+            "url": file_data.get("webContentLink", ""),
+            "id": id,
+            "name": file_data["name"],
+            "original_name": file_data["originalFilename"],
+        }
 
     def accessed_time(self, name):
         """
@@ -487,7 +523,7 @@ class GoogleDriveStorage(Storage):
         file_data = self._check_file_exists(name)
         if file_data is None:
             return None
-        return parse(file_data['createdDate'])
+        return parse(file_data["createdDate"])
 
     def modified_time(self, name):
         """
@@ -497,7 +533,7 @@ class GoogleDriveStorage(Storage):
         file_data = self._check_file_exists(name)
         if file_data is None:
             return None
-        return parse(file_data['modifiedDate'])
+        return parse(file_data["modifiedDate"])
 
     def deconstruct(self):
         """
@@ -505,7 +541,7 @@ class GoogleDriveStorage(Storage):
         """
         name, path, args, kwargs = super().deconstruct()
         if self._service_email is not None:
-            kwargs['service_email'] = self._service_email
+            kwargs["service_email"] = self._service_email
         if self._json_keyfile_path is not None:
-            kwargs['json_keyfile_path'] = self._json_keyfile_path
+            kwargs["json_keyfile_path"] = self._json_keyfile_path
         return name, path, args, kwargs
