@@ -240,10 +240,10 @@ class GoogleDriveStorage(Storage):
         current_folder_data = self._drive_service.files().create(body=meta_data).execute()
 
         # Setting up permissions
-        for p in self._permissions:
-            self._drive_service.permissions().create(
-                fileId=current_folder_data["id"], body={**p.raw}
-            ).execute()
+        # for p in self._permissions:
+        #     self._drive_service.permissions().create(
+        #         fileId=current_folder_data["id"], body={**p.raw}
+        #     ).execute()
 
         return current_folder_data
 
