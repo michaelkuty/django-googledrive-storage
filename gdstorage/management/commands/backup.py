@@ -4,13 +4,13 @@ import os
 from django.conf import settings
 from django.core.files.storage import storages
 from django.core.management.base import BaseCommand, CommandError
-
+from gdstorage.management.utils import CommandMixin
 from gdstorage.storage import (GoogleDriveFilePermission,
                                GoogleDrivePermissionRole,
                                GoogleDrivePermissionType, GoogleDriveStorage)
 
 
-class Command(BaseCommand):
+class Command(BaseCommand, CommandMixin):
     help = "Backup site to various storage formats"
 
     def add_arguments(self, parser):
@@ -22,22 +22,6 @@ class Command(BaseCommand):
         parser.add_argument("--location-root", type=str)
         parser.add_argument("--location-db", type=str, default="db/")
         parser.add_argument("--location-media", type=str, default="media/")
-
-    @property
-    def storage(self):
-
-        if not hasattr(self, "_storage"):
-            if self.options.get("users") or hasattr(settings, "GOOGLE_DRIVE_STORAGE_DEFAULT_USER"):
-                permission = GoogleDriveFilePermission(
-                    GoogleDrivePermissionRole.WRITER,
-                    GoogleDrivePermissionType.USER,
-                    self.options.get("users") or settings.GOOGLE_DRIVE_STORAGE_DEFAULT_USER,
-                )
-
-                self._storage = GoogleDriveStorage(permissions=(permission,))
-            else:
-                self._storage = GoogleDriveStorage()
-        return self._storage
 
     def _backup_db(self, *args, **options):
 
@@ -56,9 +40,6 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Successfully created backup of media folder."))
         else:
             self.stdout.write(self.style.SUCCESS("DB Engine not supported now."))
-
-    def _get_path(self, name="db"):
-        return os.path.join(settings.GOOGLE_DRIVE_STORAGE_MEDIA_ROOT, name)
 
     def _backup_media(self, *args, **options):
 
@@ -87,6 +68,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.options = options
 
+        self.populate_permissions()
         if options["database"]:
             self._backup_db(*args, **options)
 

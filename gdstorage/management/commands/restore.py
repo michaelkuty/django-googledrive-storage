@@ -4,13 +4,13 @@ import os
 from django.conf import settings
 from django.core.files.storage import storages
 from django.core.management.base import BaseCommand, CommandError
-
+from gdstorage.management.utils import CommandMixin
 from gdstorage.storage import (GoogleDriveFilePermission,
                                GoogleDrivePermissionRole,
                                GoogleDrivePermissionType, GoogleDriveStorage)
 
 
-class Command(BaseCommand):
+class Command(BaseCommand, CommandMixin):
     help = "Backup site to various storage formats"
 
     def add_arguments(self, parser):
@@ -20,13 +20,6 @@ class Command(BaseCommand):
         parser.add_argument("--location-root", type=str)
         parser.add_argument("--location-db", type=str, default="db/")
         parser.add_argument("--location-media", type=str, default="media/")
-
-    @property
-    def storage(self):
-
-        if not hasattr(self, "_storage"):
-            self._storage = GoogleDriveStorage()
-        return self._storage
 
     def _restore_db(self, *args, **options):
 
