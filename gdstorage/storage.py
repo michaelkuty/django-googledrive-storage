@@ -409,10 +409,10 @@ class GoogleDriveStorage(Storage):
             )
 
         # Setting up permissions
-        for p in self._permissions:
-            self._drive_service.permissions().create(
-                fileId=file_data["id"], body={**p.raw}
-            ).execute()
+        # for p in self._permissions:
+        #     self._drive_service.permissions().create(
+        #         fileId=file_data["id"], body={**p.raw}
+        #     ).execute()
 
         return {
             "id": file_data["id"],
