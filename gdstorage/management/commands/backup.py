@@ -69,7 +69,9 @@ class Command(BaseCommand):
 
         # Print the list of files
         for file in all_files:
-            filename = self._get_path("media") + os.path.join(file.replace(settings.MEDIA_ROOT, ""))
+            filename = self._get_path("media") + os.path.join(
+                file.replace(str(settings.MEDIA_ROOT), "")
+            )
             self.stdout.write(self.style.SUCCESS(f"{file} -> {filename}"))
 
             response = self.storage.save(
