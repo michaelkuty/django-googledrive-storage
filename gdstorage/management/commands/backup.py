@@ -47,7 +47,7 @@ class Command(BaseCommand):
             fp = open(db_conf["NAME"], "rb")
 
             response = self.storage.save(
-                os.path.join(self._get_path("db"), db_conf["NAME"].split("/")[-1]),
+                os.path.join(self._get_path("db"), str(db_conf["NAME"]).split("/")[-1]),
                 content=fp,
                 update=options["update"],
             )
